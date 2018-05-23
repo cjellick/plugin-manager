@@ -129,8 +129,16 @@ func CheckMetadata(dockerClient *client.Client) error {
 }
 
 func (w *watcher) removeContainer(container metadata.Container) {
+	c, err := w.dc.ContainerInspect(context.Background(), container.ExternalId)
+	if err != nil {
+		log.Errorf("reaper: Inspect failed: %v", err)
+		return
+	}
+	if c.Name == "/rancher-agent" {
+		return
+	}
 	log.Infof("reaper:  Removing unmanaged container %s %s", container.Name, container.ExternalId)
-	err := w.dc.ContainerRemove(context.Background(), container.ExternalId, types.ContainerRemoveOptions{
+	err = w.dc.ContainerRemove(context.Background(), container.ExternalId, types.ContainerRemoveOptions{
 		Force: true,
 	})
 	if err != nil {
